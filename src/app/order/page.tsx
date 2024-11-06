@@ -1,12 +1,14 @@
 'use client';
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from "lucide-react";
 import api from '@/lib/axios';
 import OrderList from '@/components/order/OrderList';
+import { Card, CardContent } from "@/components/ui/card";
+import { Order } from '@/types/order';
 
 const OrdersPage = () => {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -23,7 +25,7 @@ const OrdersPage = () => {
     return JSON.parse(userString);
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
       setError('Authentication required');
@@ -32,7 +34,6 @@ const OrdersPage = () => {
     }
 
     const user = getAuthUserString();
-    console.log("User :", user.id);
 
     try {
       const response = await api.get(`/orders/${user.id}`, {
@@ -51,23 +52,37 @@ const OrdersPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <Card className="mx-auto max-w-4xl mt-4">
+        <CardContent className="p-6">
+          <div className="text-destructive">Error: {error}</div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <OrderList orders={orders} />
+    <div className="h-[calc(100vh-5px)] p-4 pt-[72px]">
+      <Card className="max-w-4xl mx-auto h-full">
+        <CardContent className="p-6 h-full pt-[20px]">
+          <OrderList orders={orders} />
+        </CardContent>
+      </Card>
     </div>
   );
 };

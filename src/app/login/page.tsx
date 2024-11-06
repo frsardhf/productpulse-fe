@@ -17,12 +17,12 @@ const LoginPage: React.FC = () => {
   }, [searchParams]);
 
   const handleLoginSuccess = () => {
-    console.log("Login successful, redirecting to:", returnUrl);
     router.push(returnUrl);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-2 sm:px-6 lg:px-8" 
+      style={{ paddingTop: '3rem' }}>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
@@ -31,7 +31,7 @@ const LoginPage: React.FC = () => {
           Don&apos;t have an account?{' '}
           <Link 
             href="/signup" 
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-purple-600 hover:text-purple-300"
           >
             Sign up
           </Link>

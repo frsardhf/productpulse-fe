@@ -1,6 +1,5 @@
-// src/app/checkout/page.tsx
 import React from 'react';
-import Checkout from '@/components/checkout/Checkout'; // Adjust the path if necessary
+import Checkout from '@/components/checkout/Checkout';
 
 const CheckoutPage = () => {
   return (

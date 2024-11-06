@@ -1,6 +1,7 @@
 import React from 'react';
-import OrderItem from './OrderItem';
 import { PackageX } from 'lucide-react';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import OrderItem from './OrderItem';
 
 interface Order {
   id: number;
@@ -23,14 +24,20 @@ interface OrderListProps {
 }
 
 const OrderList: React.FC<OrderListProps> = ({ orders }) => {
+  const sortedOrders = [...orders].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateB - dateA;
+  });
+
   if (orders.length === 0) {
     return (
-      <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
-        <PackageX className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+      <div className="flex flex-col items-center justify-center h-full">
+        <PackageX className="w-16 h-16 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-1">
           No Orders Yet
         </h3>
-        <p className="text-gray-500">
+        <p className="text-muted-foreground">
           When you place orders, they will appear here.
         </p>
       </div>
@@ -38,15 +45,19 @@ const OrderList: React.FC<OrderListProps> = ({ orders }) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+    <div className="h-full flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold">
           Your Orders ({orders.length})
         </h1>
       </div>
-      {orders.map(order => (
-        <OrderItem key={order.id} order={order} />
-      ))}
+      <ScrollArea className="flex-1 -mx-6 px-4">
+        <div className="space-y-2 pb-2">
+        {sortedOrders.map((order) => (
+          <OrderItem key={order.id} order={order} />
+        ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 };

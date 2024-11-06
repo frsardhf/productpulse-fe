@@ -1,181 +1,359 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import Button from "@/components/ui/button";
-import Input from "@/components/ui/input";
-import api from '@/lib/axios';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { AxiosError } from 'axios';
-import { useRouter } from 'next/navigation'; // Import useRouter for navigation
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import api from '@/lib/axios';
+import { useAuth } from '@/contexts/auth-context';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter
+} from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { User } from '@/types/auth';
 
-interface AlertProps {
-  variant?: 'success' | 'error';
-  children: React.ReactNode;
-}
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().optional(),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface ErrorResponse {
   message: string;
-  // Add any other properties you expect in the error response
 }
 
-const Alert: React.FC<AlertProps> = ({ variant = 'success', children }) => {
-  const baseStyles = "px-4 py-3 mb-4 rounded-lg text-sm font-medium";
-  const variantStyles = {
-    success: "bg-green-50 text-green-700 border border-green-200",
-    error: "bg-red-50 text-red-700 border border-red-200"
-  };
-
-  return (
-    <div className={`${baseStyles} ${variantStyles[variant]}`}>
-      {children}
-    </div>
-  );
-};
-
-// Custom Card Component
-interface CardProps {
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  className?: string;
-}
-
-const Card: React.FC<CardProps> = ({ children, footer, className }) => {
-  return (
-    <div className={`bg-white shadow-md rounded-lg p-4 ${className}`}>
-      <div className="flex-1">{children}</div>
-      {footer && <div className="mt-4 border-t pt-2">{footer}</div>}
-    </div>
-  );
-};
+const RATE_LIMIT_WINDOW = 60000;
+const MAX_REQUESTS = 1;
 
 const Profile: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const router = useRouter();
+  const { user, setUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
-  const router = useRouter(); // Initialize useRouter
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<ProfileFormValues | null>(null);
+  const [requestCount, setRequestCount] = useState<number>(0);
+  const [lastRequestTime, setLastRequestTime] = useState<number>(Date.now());
 
-  const getAuthUserString = () => {
-    const userString = localStorage.getItem('user');
-    if (!userString) return null;
-    return JSON.parse(userString);
-  };
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+    },
+  });
 
-  const getAuthToken = () => {
+  const getAuthUserString = useCallback(() => {
+    return user;
+  }, [user]);
+
+  const getAuthToken = useCallback(() => {
     const token = localStorage.getItem('token');
     if (!token) return null;
     return token;
+  }, []);
+
+  const checkRateLimit = () => {
+    const now = Date.now();
+    if (now - lastRequestTime > RATE_LIMIT_WINDOW) {
+      setRequestCount(1);
+      setLastRequestTime(now);
+      return true;
+    }
+    if (requestCount >= MAX_REQUESTS) {
+      return false;
+    }
+    setRequestCount(prev => prev + 1);
+    return true;
   };
 
   useEffect(() => {
     const token = getAuthToken();
     if (!token) {
-      // Redirect to login page if there is no token
       router.push('/login?returnUrl=' + encodeURIComponent(window.location.pathname));
       return;
     }
 
     const user = getAuthUserString();
     if (user) {
-      setName(user.name);
-      setEmail(user.email);
+      form.reset({
+        name: user.name,
+        email: user.email,
+        password: '',
+      });
     }
-    setIsLoading(false); // Set loading to false after checking auth
-  }, [router]);
+    setIsLoading(false);
+  }, [router, getAuthToken, getAuthUserString, form]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const onSubmit = async (data: ProfileFormValues) => {
+    const user = getAuthUserString();
+    const hasEmailChanged = data.email !== user?.email;
+    const hasPasswordChanged = data.password && data.password.length > 0;
+
+    if (hasEmailChanged || hasPasswordChanged) {
+      setPendingChanges(data);
+      setShowConfirmDialog(true);
+      return;
+    }
+
+    await updateProfile(data);
+  };
+
+  const updateProfile = async (data: ProfileFormValues) => {
+    if (!checkRateLimit()) {
+      setError("Too many requests. Please try again later.");
+      return;
+    }
+
     setError(null);
     setSuccess(null);
-    const user = getAuthUserString();
-  
+    setIsSaving(true);
+    
+    const currentUser = getAuthUserString();
+    
+    if (!currentUser) {
+      setError("No user found. Please log in again.");
+      setIsSaving(false);
+      router.push('/login');
+      return;
+    }
+
+    const originalData = { ...currentUser };
+
     try {
-      const response = await api.put(`/users/${user?.id}`, {
-        name,
-        email,
-        ...(password && { password }), // Only include password if it's not empty
+      const updatedUser: User = {
+        id: currentUser .id,        
+        role: currentUser.role,    
+        name: data.name,           
+        email: data.email,         
+      };
+
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+
+      const response = await api.put(`/users/${currentUser?.id}`, {
+        name: data.name,
+        email: data.email,
+        ...(data.password && { password: data.password }),
+      },{
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          }
       });
-  
+
       if (response.status === 200) {
         setSuccess('Profile updated successfully!');
-        setPassword(''); // Clear password field after successful update
+        form.reset(data);
       }
     } catch (err) {
+      localStorage.setItem('user', JSON.stringify(originalData));
+      setUser(originalData as User);
+
       const axiosError = err as AxiosError<ErrorResponse>;
-      const errorMessage = axiosError.response?.data?.message || 'An error occurred while updating the profile.';
-      setError(errorMessage); 
+      const errorMessage = axiosError.response?.data?.message ?? 
+        'An error occurred while updating the profile.';
+      setError(errorMessage);
+    } finally {
+      setIsSaving(false);
+      setShowConfirmDialog(false);
+      setPendingChanges(null);
     }
   };
 
+  const handleReset = () => {
+    const user = getAuthUserString();
+    if (user) {
+      form.reset({
+        name: user.name,
+        email: user.email,
+        password: '',
+      });
+    }
+    setError(null);
+    setSuccess(null);
+  };
+
   if (isLoading) {
-    return <div>Loading...</div>; // Show loading indicator while checking auth
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-[200px]" />
+            <Skeleton className="h-4 w-[300px]" />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[100px]" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[100px]" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[100px]" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Skeleton className="h-10 w-full" />
+          </CardFooter>
+        </Card>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <Card className="bg-white">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Profile Settings</h2>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Settings</CardTitle>
+          <CardDescription>
+            Update your personal information and account settings
+          </CardDescription>
+        </CardHeader>
 
-        {error && (
-          <Alert variant="error">{error}</Alert>
-        )}
-        {success && (
-          <Alert variant="success">{success}</Alert>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Name
-            </label>
-            <Input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full"
-            />
-          </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-6">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              {success && (
+                <Alert>
+                  <AlertDescription>{success}</AlertDescription>
+                </Alert>
+              )}
 
-          <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full"
-            />
-          </div>
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Leave blank to keep current password"
-              className="w-full"
-            />
-          </div>
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <Button
-            type="submit"
-            className="w-full bg-purple-500 hover:bg-purple-600 text-white"
-          >
-            Update Profile
-          </Button>
-        </form>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="Leave blank to keep current password"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+
+            <CardFooter className="flex justify-between gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleReset}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={isSaving}
+              >
+                {isSaving && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
+                )}
+                {isSaving ? "Saving..." : "Update Profile"}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
       </Card>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to make sensitive changes to your profile
+              {pendingChanges?.email !== form.getValues().email && " (email)"}
+              {pendingChanges?.password && " (password)"}
+              . Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => pendingChanges && updateProfile(pendingChanges)}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

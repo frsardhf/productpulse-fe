@@ -3,7 +3,6 @@ import api from '@/lib/axios';
 import { Product } from '@/types/product';
 import ProductCard from '@/components/products/ProductCard';
 
-// Fetch function
 async function getProduct(id: string): Promise<Product> {
   try {
     const response = await api.get(`/products/${id}`);
@@ -14,7 +13,10 @@ async function getProduct(id: string): Promise<Product> {
   }
 }
 
-// Loading component
+function formatPrice(price: number) {
+  return (Math.round(price * 100) / 100).toFixed(2);
+}
+
 function LoadingUI() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -29,10 +31,18 @@ function LoadingUI() {
   );
 }
 
-// Product Detail component
-function ProductDetail({ product }: { product: Product }) {
+const categories = [
+  { id: 1, name: 'Electronics' },
+  { id: 2, name: 'Books' },
+  { id: 3, name: 'Clothing' },
+];
+
+function ProductDetail({ product }: { readonly product: Product }) {
+  const category = categories.find(cat => cat.id === product.categoryId);
+  const categoryName = category ? category.name : 'Unknown Category';
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="bg-gray-50 px-4 sm:px-6 lg:px-8 pt-[72px]">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white shadow rounded-lg overflow-hidden">
           <div className="p-6">
@@ -41,8 +51,8 @@ function ProductDetail({ product }: { product: Product }) {
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   {product.name}
                 </h1>
-                <p className="text-2xl font-semibold text-blue-600">
-                  ${product.price}
+                <p className="text-2xl font-semibold text-primary">
+                  ${formatPrice(product.price)}
                 </p>
               </div>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -67,7 +77,6 @@ function ProductDetail({ product }: { product: Product }) {
           </div>
         </div>
 
-        {/* Additional product details */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Product Details
@@ -78,7 +87,7 @@ function ProductDetail({ product }: { product: Product }) {
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Category</dt>
                   <dd className="mt-1 text-sm text-gray-900">
-                    Category {product.categoryId}
+                    {categoryName}
                   </dd>
                 </div>
                 <div>

@@ -1,5 +1,11 @@
-import React from 'react';
-import { Package, Truck, Calendar, MapPin } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Package, Calendar, MapPin } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Product } from '@/types/product';
+import api from '@/lib/axios';
 
 interface OrderItemProps {
   order: {
@@ -18,28 +24,81 @@ interface OrderItemProps {
   };
 }
 
+const ProductInfo: React.FC<{ productId: number; quantity: number }> = ({ productId, quantity }) => {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await api.get(`/products/${productId}`);
+        setProduct(response.data);
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError('Failed to load product');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [productId]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-[200px]" />
+        <Skeleton className="h-4 w-[100px]" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <span className="text-sm font-medium text-destructive">
+          Product ID: {productId}
+        </span>
+        <span className="text-sm text-muted-foreground ml-2">
+          Qty: {quantity}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="text-sm font-medium">
+        {product?.name}
+      </div>
+      <div className="text-sm text-muted-foreground">
+        ID: {productId} • Qty: {quantity}
+      </div>
+    </div>
+  );
+};
+
 const OrderStatusBadge: React.FC<{ status: string }> = ({ status }) => {
-  const getStatusColors = (status: string) => {
+  const getStatusVariant = (status: string) => {
     switch (status.toLowerCase()) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'pending';
       case 'processing':
-        return 'bg-blue-100 text-blue-800';
+        return 'processing';
       case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
+        return 'shipped';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'cancelled';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'default';
     }
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColors(status)}`}>
-      {status}
-    </span>
+    <Badge variant={getStatusVariant(status)}>
+      {status.toLowerCase()}
+    </Badge>
   );
 };
 
@@ -48,68 +107,61 @@ const OrderItem: React.FC<OrderItemProps> = ({ order }) => {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold text-gray-900">
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">
               Order #{order.id}
             </h2>
             <OrderStatusBadge status={order.status} />
           </div>
-          <span className="text-lg font-bold text-gray-900">
+          <span className="text-lg font-bold">
             ${Number(order.totalPrice).toFixed(2)}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="flex items-center gap-2 text-gray-600">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-1">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="w-5 h-5" />
             <span>{formattedDate}</span>
           </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <Truck className="w-5 h-5" />
-            <span>{order.status}</span>
-          </div>
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <MapPin className="w-5 h-5" />
             <span className="truncate">{order.shippingAddress}</span>
           </div>
         </div>
 
-        <div className="border-t border-gray-200 pt-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">
+        <div className="border-t">
+          <h3 className="text-sm font-semibold mt-2 mb-1">
             Order Items
           </h3>
-          <div className="space-y-3">
-            {order.orderItems.map(item => (
-              <div 
-                key={item.id}
-                className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <Package className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <span className="text-sm font-medium text-gray-900">
-                      Product ID: {item.productId}
-                    </span>
-                    <span className="text-sm text-gray-500 ml-2">
-                      Qty: {item.quantity}
-                    </span>
+          <ScrollArea className="h-[120px]">
+            <div className="space-y-1">
+              {order.orderItems.map(item => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between py-2 px-3 bg-muted rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-muted-foreground" />
+                    <ProductInfo productId={item.productId} quantity={item.quantity} />
                   </div>
+                  <span className="text-sm font-medium">
+                    ${Number(item.price).toFixed(2)}
+                  </span>
                 </div>
-                <span className="text-sm font-medium text-gray-900">
-                  ${Number(item.price).toFixed(2)}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,6 +1,6 @@
 'use client'
 import React, { useEffect } from 'react';
-import Button from "@/components/ui/button";
+import Button from "@/components/ui/button-old";
 import { ArrowRight } from 'lucide-react';
 
 const HomePage: React.FC = () => {
@@ -14,12 +14,11 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <section className="relative bg-gradient-to-b from-purple-50 to-white min-h-screen py-40"> {/* Added min-h-screen here */}
+      <section className="relative bg-gradient-to-b from-purple-50 to-white min-h-screen py-40">
         <div className="container mx-auto px-4 py-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Discover Amazing Products at 
-              <span className="text-purple-600"> Incredible Prices</span>
+              Discover Amazing Products at<span className="text-purple-600"> Incredible Prices</span>
             </h1>
             <p className="text-lg text-gray-600 mb-8">
               Your one-stop destination for quality products and exceptional service.

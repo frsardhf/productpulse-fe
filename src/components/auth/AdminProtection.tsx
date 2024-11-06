@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 interface User {
   id: number;
@@ -9,8 +10,8 @@ interface User {
   role: string;
 }
 
-export const AdminProtection = (WrappedComponent: React.ComponentType) => {
-  return function ProtectedComponent(props: any) {
+export const AdminProtection = <P extends object>(WrappedComponent: React.ComponentType<P>) => {
+  return function ProtectedComponent(props: P) {
     const router = useRouter();
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +20,7 @@ export const AdminProtection = (WrappedComponent: React.ComponentType) => {
       const checkAuth = () => {
         const userStr = localStorage.getItem('user');
         if (!userStr) {
-          router.push('/login'); // Redirect to login if no user
+          router.push('/login');
           return;
         }
 
@@ -31,7 +32,7 @@ export const AdminProtection = (WrappedComponent: React.ComponentType) => {
           }
           setIsAuthorized(true);
         } catch (error) {
-          console.log(error)
+          console.log(error);
           router.push('/login');
         }
         setIsLoading(false);
@@ -41,7 +42,11 @@ export const AdminProtection = (WrappedComponent: React.ComponentType) => {
     }, [router]);
 
     if (isLoading) {
-      return <div>Loading...</div>;
+      return (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      );
     }
 
     return isAuthorized ? <WrappedComponent {...props} /> : null;

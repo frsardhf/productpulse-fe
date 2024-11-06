@@ -1,26 +1,25 @@
-import React, { forwardRef } from 'react';
+import * as React from "react"
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string; // Optional label for the input
-  error?: string; // Optional error message
-}
+import { cn } from "@/lib/utils"
 
-// Use forwardRef to allow refs to be passed to the input element
-const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, ...props }, ref) => {
-  return (
-    <div className="input-container">
-      {label && <label className="input-label">{label}</label>}
-      <input 
-        ref={ref} // Forward the ref to the input element
-        className={`input-field ${error ? 'input-error' : ''}`} 
-        {...props} 
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
       />
-      {error && <span className="error-message">{error}</span>}
-    </div>
-  );
-});
+    )
+  }
+)
+Input.displayName = "Input"
 
-// Set a display name for debugging purposes
-Input.displayName = 'Input';
-
-export default Input;
+export { Input }
