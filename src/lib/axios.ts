@@ -4,7 +4,9 @@ const api = axios.create({
   baseURL: 'https://productpulse-be.vercel.app',
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
