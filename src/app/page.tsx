@@ -2,8 +2,10 @@
 import React, { useEffect } from 'react';
 import Button from "@/components/ui/button-old";
 import { ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const HomePage: React.FC = () => {
+  const router = useRouter();
   useEffect(() => {
     document.body.classList.add('overflow-hidden');
 
@@ -26,7 +28,7 @@ const HomePage: React.FC = () => {
             </p>
             <Button 
               className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 rounded-lg text-lg font-semibold inline-flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
-              onClick={() => window.location.href = '/products'}
+              onClick={() => router.push('/products')}
             >
               Browse Products
               <ArrowRight className="w-5 h-5" />
