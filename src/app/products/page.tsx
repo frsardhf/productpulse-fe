@@ -1,9 +1,11 @@
-import ProductList from '@/components/products/ProductList';
+import ProductList from "@/components/products/ProductList";
 
 export default function ProductsPage() {
   return (
-    <div className="container mx-auto px-4 py-2.8 pt-[72px]">
-      <ProductList />
-    </div>
+    <main className="min-h-screen bg-slate-50 px-4 pb-16 pt-24 sm:px-6">
+      <div className="mx-auto max-w-7xl">
+        <ProductList />
+      </div>
+    </main>
   );
 }

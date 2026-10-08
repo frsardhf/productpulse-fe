@@ -1,96 +1,87 @@
-'use client'
-import { Product } from '@/types/product'
-import { useCart } from '@/hooks/use-cart'
-import { Button } from "@/components/ui/button"
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { Product } from "@/types/product";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-  CardDescription,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { useToast } from "@/hooks/use-toast"
-import { useState } from 'react'
+} from "@/components/ui/card";
+import { formatPrice, productCategory, stockLabel } from "@/lib/catalogue";
+import ProductArtwork from "./ProductArtwork";
+import AddToCartButton from "./AddToCartButton";
 
 interface ProductCardProps {
-  readonly product: Product
-}
-
-function formatPrice(price: number) {
-  return (Math.round(price * 100) / 100).toFixed(2);
+  readonly product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { addToCart } = useCart()
-  const { toast } = useToast()
-  const [isButtonDisabled, setIsButtonDisabled] = useState(false)
+  const detailsUrl = `/products/details?id=${product.id}`;
+  const isLowStock = product.stock > 0 && product.stock <= 4;
 
-  const handleAddToCart = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    
-    setIsButtonDisabled(true);
-    
-    try {
-      await addToCart(product.id, 1)
-      
-      toast({
-        className: "bg-background",
-        description: `${product.name} added to cart`,
-        duration: 2000,
-      });
-    } catch (error) {
-      console.log(error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to add item to cart. Please try again.",
-      })
-    } finally {
-      setTimeout(() => {
-        setIsButtonDisabled(false);
-      }, 2000); 
-    }
-  }
-  
   return (
-    <Card className="flex flex-col h-full">
-      <CardHeader className="flex-none">
-        <div className="h-8 mb-2">
-          <CardTitle className="text-xl line-clamp-2">{product.name}</CardTitle>
+    <Card className="group flex h-full flex-col overflow-hidden border-slate-200/80 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
+      <Link href={detailsUrl} aria-label={`View ${product.name}`}>
+        <ProductArtwork
+          product={product}
+          compact
+          className="transition duration-300 group-hover:scale-[1.02]"
+        />
+      </Link>
+
+      <CardHeader className="space-y-3 pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <Badge variant="outline" className="max-w-[70%] truncate bg-white/70">
+            {productCategory(product)}
+          </Badge>
+          <span className="text-xs font-medium text-muted-foreground">
+            {product.sourceVendor || "ProductPulse"}
+          </span>
         </div>
+        <CardTitle className="min-h-12 text-base leading-6">
+          <Link href={detailsUrl} className="hover:text-primary">
+            {product.name}
+          </Link>
+        </CardTitle>
+        {product.variantLabel && (
+          <p className="text-xs font-medium uppercase tracking-wide text-primary/80">
+            Variant: {product.variantLabel}
+          </p>
+        )}
       </CardHeader>
-      
-      <CardContent className="flex-1 min-h-0">
-        <div className="h-8 mb-4">
-          <CardDescription className="line-clamp-3">
-            {product.description}
-          </CardDescription>
-        </div>
-        
-        <div className="pt-2">
-          <p className="text-lg font-semibold">
-            ${formatPrice(product.price)}
+
+      <CardContent className="flex-1 space-y-4 pb-4">
+        <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
+          {product.description}
+        </p>
+        <div className="flex items-end justify-between gap-3">
+          <p className="text-xl font-bold tracking-tight">
+            {formatPrice(product)}
           </p>
           <Badge
-            variant={product.stock > 0 ? "secondary" : "destructive"}
-            className="whitespace-nowrap"
+            variant={product.stock <= 0 ? "destructive" : "secondary"}
+            className={isLowStock ? "bg-amber-100 text-amber-800" : undefined}
           >
-            {product.stock > 0 ? `${product.stock} in stock` : "Out of stock"}
+            {stockLabel(product.stock)}
           </Badge>
         </div>
       </CardContent>
-      
-      <CardFooter className="flex-none mt-auto">
-        <Button
+
+      <CardFooter className="grid grid-cols-[1fr_auto] gap-2 border-t bg-slate-50/60 pt-4">
+        <AddToCartButton
+          product={product}
+          returnUrl={detailsUrl}
           className="w-full"
-          variant={product.stock > 0 ? "default" : "secondary"}
-          onClick={handleAddToCart}
-          disabled={product.stock === 0 || isButtonDisabled}
+        />
+        <Link
+          href={detailsUrl}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white text-muted-foreground transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`Open details for ${product.name}`}
         >
-          {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
-        </Button>
+          <ArrowUpRight className="h-4 w-4" />
+        </Link>
       </CardFooter>
     </Card>
   );

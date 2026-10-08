@@ -187,7 +187,7 @@ const ProductManagement: React.FC = () => {
     setDeleteProductId(null);
   };
 
-  const handleSort = (key: keyof Product) => {
+  const handleSort = (key: "name" | "price" | "stock") => {
     let direction: 'asc' | 'desc' = 'asc';
     
     if (sortConfig?.key === key && sortConfig.direction === 'asc') {
@@ -342,7 +342,9 @@ const ProductManagement: React.FC = () => {
           
           <Select
             value={sortConfig?.key}
-            onValueChange={(value) => handleSort(value as keyof Product)}
+            onValueChange={(value) =>
+              handleSort(value as "name" | "price" | "stock")
+            }
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />

@@ -1,45 +1,88 @@
-'use client'
-import React, { useEffect } from 'react';
-import Button from "@/components/ui/button-old";
-import { ArrowRight } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import Link from "next/link";
+import { ArrowRight, Boxes, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-const HomePage: React.FC = () => {
-  const router = useRouter();
-  useEffect(() => {
-    document.body.classList.add('overflow-hidden');
-
-    return () => {
-      document.body.classList.remove('overflow-hidden');
-    };
-  }, []);
-
+export default function HomePage() {
   return (
-    <div className="min-h-screen">
-      <section className="relative bg-gradient-to-b from-purple-50 to-white min-h-screen py-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Discover Amazing Products at<span className="text-purple-600"> Incredible Prices</span>
+    <main className="min-h-screen overflow-hidden bg-slate-50 pt-16">
+      <section className="relative isolate px-4 py-20 sm:px-6 sm:py-28">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(167,139,250,0.2),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(56,189,248,0.22),transparent_35%)]" />
+        <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white/80 px-3 py-1.5 text-xs font-semibold text-indigo-800 shadow-sm backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5" /> Full-stack portfolio demo
+            </div>
+            <h1 className="mt-6 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-6xl">
+              A focused storefront for{" "}
+              <span className="bg-gradient-to-r from-violet-600 to-sky-600 bg-clip-text text-transparent">
+                Blue Archive merchandise
+              </span>
             </h1>
-            <p className="text-lg text-gray-600 mb-8">
-              Your one-stop destination for quality products and exceptional service.
-              Join thousands of satisfied customers who trust us for their shopping needs.
+            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
+              Browse a curated Good Smile US metadata snapshot, compare local
+              demo inventory, and explore a checkout flow built around safe,
+              repeatable data.
             </p>
-            <Button 
-              className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 rounded-lg text-lg font-semibold inline-flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200"
-              onClick={() => router.push('/products')}
-            >
-              Browse Products
-              <ArrowRight className="w-5 h-5" />
-            </Button>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Button asChild size="lg" className="h-12 px-6">
+                <Link href="/products">
+                  Browse catalogue <ArrowRight />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="h-12 px-6">
+                <Link href="/signup">Create demo account</Link>
+              </Button>
+            </div>
+            <p className="mt-5 text-xs leading-5 text-muted-foreground">
+              Portfolio demo: orders are simulated and no payment is collected.
+              ProductPulse is not an official Good Smile store.
+            </p>
+          </div>
+
+          <div className="relative mx-auto w-full max-w-xl">
+            <div className="absolute -inset-8 -z-10 rounded-full bg-violet-300/20 blur-3xl" />
+            <div className="grid rotate-1 grid-cols-2 gap-4 rounded-[2rem] border border-white/70 bg-white/70 p-4 shadow-2xl backdrop-blur sm:p-6">
+              {[
+                ["Plush", "Soft character goods", "from-rose-100 to-amber-50"],
+                [
+                  "Figures",
+                  "Scale and articulated",
+                  "from-sky-100 to-indigo-50",
+                ],
+                [
+                  "Nendoroids",
+                  "Compact collectibles",
+                  "from-violet-100 to-fuchsia-50",
+                ],
+                [
+                  "Accessories",
+                  "Bags and apparel",
+                  "from-emerald-100 to-cyan-50",
+                ],
+              ].map(([title, subtitle, palette], index) => (
+                <div
+                  key={title}
+                  className={`flex min-h-40 flex-col justify-between rounded-2xl bg-gradient-to-br ${palette} p-4 ${index % 2 ? "translate-y-4" : ""}`}
+                >
+                  {index === 0 ? (
+                    <Boxes className="h-7 w-7 text-rose-600" />
+                  ) : index === 1 ? (
+                    <ShieldCheck className="h-7 w-7 text-indigo-600" />
+                  ) : index === 2 ? (
+                    <Sparkles className="h-7 w-7 text-violet-600" />
+                  ) : (
+                    <Search className="h-7 w-7 text-emerald-600" />
+                  )}
+                  <div>
+                    <p className="font-semibold text-slate-900">{title}</p>
+                    <p className="mt-1 text-xs text-slate-600">{subtitle}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent"></div>
       </section>
-    </div>
+    </main>
   );
-};
-
-export default HomePage;
+}

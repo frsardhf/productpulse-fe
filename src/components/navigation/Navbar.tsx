@@ -19,6 +19,8 @@ interface JWTPayload {
   exp: number;
 }
 
+const protectedPaths = ['/admin', '/cart', '/checkout', '/order', '/profile'];
+
 const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { user, setUser, loading } = useAuth();
@@ -65,7 +67,7 @@ const Navbar: React.FC = () => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          await api.post('/auth/logout', { access_token: token });
+          await api.post('/auth/logout');
         } catch (error) {
           console.error('Logout API error:', error);
         }
@@ -85,15 +87,23 @@ const Navbar: React.FC = () => {
     const storedUser = localStorage.getItem('user');
 
     if (!token || !storedUser) {
-      handleLogout();
+      if (token || storedUser) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setUser(null);
+      }
       return;
     }
 
     if (isTokenExpired(token)) {
-      handleLogout();
-      router.push('/login')
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      setUser(null);
+      if (protectedPaths.some((path) => pathname.startsWith(path))) {
+        router.replace(`/login?returnUrl=${encodeURIComponent(pathname)}`);
+      }
     }
-  }, [handleLogout, router]);
+  }, [pathname, router, setUser]);
 
   useEffect(() => {
     validateSession();
