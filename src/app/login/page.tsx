@@ -1,86 +1,51 @@
-'use client';
-import LoginForm from '@/components/auth/LoginForm';
-import Link from 'next/link';
-import React, { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+"use client";
 
-const LoginContent: React.FC = () => {
+import { Suspense } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import LoginForm from "@/components/auth/LoginForm";
+import { safeReturnUrl } from "@/lib/session";
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [returnUrl, setReturnUrl] = useState<string>('/products');
-
-  useEffect(() => {
-    const returnUrlParam = searchParams?.get('returnUrl');
-    if (returnUrlParam) {
-      setReturnUrl(returnUrlParam);
-    }
-  }, [searchParams]);
-
-  const handleLoginSuccess = () => {
-    router.push(returnUrl);
-  };
+  const returnUrl = safeReturnUrl(searchParams.get("returnUrl"));
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-2 sm:px-6 lg:px-8" 
-      style={{ paddingTop: '3rem' }}>
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h1 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
-        </h1>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Don&apos;t have an account?{' '}
-          <Link 
-            href="/signup" 
-            className="font-medium text-purple-600 hover:text-purple-300"
-          >
-            Sign up
-          </Link>
+    <main className="flex min-h-screen flex-col justify-center bg-slate-50 px-4 pb-12 pt-24 sm:px-6">
+      <div className="mx-auto w-full max-w-md">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950">
+            Sign in to ProductPulse
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            New to the demo?{" "}
+            <Link
+              href={`/signup?returnUrl=${encodeURIComponent(returnUrl)}`}
+              className="font-medium text-primary hover:underline"
+            >
+              Create an account
+            </Link>
+          </p>
+        </div>
+
+        <div className="mt-8 rounded-2xl border bg-white p-6 shadow-sm sm:p-8">
+          <LoginForm onLoginSuccess={() => router.replace(returnUrl)} />
+        </div>
+
+        <p className="mt-5 text-center text-xs leading-5 text-muted-foreground">
+          This is a portfolio storefront. Orders are simulated and no payment is
+          collected.
         </p>
       </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <LoginForm onLoginSuccess={handleLoginSuccess} />
-        </div>
-        
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-            >
-              Google
-            </button>
-            <button
-              type="button"
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-            >
-              GitHub
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </main>
   );
-};
+}
 
-const LoginPage: React.FC = () => {
+export default function LoginPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
       <LoginContent />
     </Suspense>
   );
-};
-
-export default LoginPage;
+}

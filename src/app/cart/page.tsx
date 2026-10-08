@@ -1,12 +1,9 @@
-import React from 'react';
-import Cart from '../../components/cart/Cart';
+import Cart from "@/components/cart/Cart";
 
-const CartPage: React.FC = () => {
+export default function CartPage() {
   return (
-    <main className="container mx-auto px-4 py-1 pt-[52px]">
+    <main className="min-h-screen bg-slate-50 px-4 pb-16 pt-24 sm:px-6">
       <Cart />
     </main>
   );
-};
-
-export default CartPage;
+}

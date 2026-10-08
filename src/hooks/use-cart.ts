@@ -1,13 +1,8 @@
-import { create } from 'zustand';
-import { Product } from '@/types/product';
-import api from '@/lib/axios';
-import { AxiosError } from 'axios';
-import { CartItemType } from '@/types/cart';
-import { jwtDecode } from 'jwt-decode';
-
-interface JWTPayload {
-  exp: number;
-}
+import { create } from "zustand";
+import api from "@/lib/axios";
+import { loginUrlForCurrentPage, isSessionTokenValid } from "@/lib/session";
+import { CartItemType } from "@/types/cart";
+import { Product } from "@/types/product";
 
 interface CartState {
   items: CartItemType[];
@@ -22,24 +17,17 @@ interface CartState {
   getTotalPrice: () => number;
 }
 
-const validateToken = (token: string | null) => {
-  if (!token) return false;
-  
-  try {
-    const decoded = jwtDecode<JWTPayload>(token);
-    const currentTime = Date.now() / 1000;
-    return decoded.exp > currentTime;
-  } catch {
-    return false;
+function requireSession(): void {
+  const token = localStorage.getItem("token");
+  if (!isSessionTokenValid(token)) {
+    window.location.assign(loginUrlForCurrentPage());
+    throw new Error("Authentication required");
   }
-};
+}
 
-const handleAuthError = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  const currentPath = window.location.pathname;
-  window.location.href = `/login?returnUrl=${encodeURIComponent(currentPath)}`;
-};
+function normalizeCartItem(item: CartItemType): CartItemType {
+  return { ...item, price: Number(item.price) };
+}
 
 export const useCart = create<CartState>((set, get) => ({
   items: [],
@@ -47,168 +35,89 @@ export const useCart = create<CartState>((set, get) => ({
   error: null,
 
   fetchItems: async () => {
-    try {
-      set({ isLoading: true, error: null });
-      
-      const token = localStorage.getItem('token');
+    if (!isSessionTokenValid(localStorage.getItem("token"))) {
+      set({ items: [], isLoading: false });
+      return;
+    }
 
-      const response = await api.get('/cart/my-cart', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          accept: 'application/json'
-        }
-      });
-      const cartItems = response.data;
-      set({ items: cartItems, isLoading: false });
-      return cartItems;
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 401) {
-        console.error('Authentication error:', error);
-        handleAuthError();
-      }
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.get<CartItemType[]>("/cart/my-cart");
       set({
-        error: 'Failed to fetch cart items',
-        isLoading: false
+        items: response.data.map(normalizeCartItem),
+        isLoading: false,
       });
-      console.error('Error fetching cart items:', error);
-      return [];
+    } catch {
+      set({ error: "Failed to fetch cart items", isLoading: false });
     }
   },
-  
-  addToCart: async (id: number, quantity: number) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token || !validateToken(token)) {
-        handleAuthError();
-        return;
-      }
-  
-      const productResponse = await api.get(`/products/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-  
-      const product: Product = productResponse.data;
-  
-      if (product.stock < quantity) {
-        throw new Error('Not enough stock available');
-      }
-  
-      const cartResponse = await api.post(
-        '/cart/add',
-        { productId: id, quantity: quantity },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-  
-      if (cartResponse.status === 201) {
-        set((state) => {
-          const existingItem = state.items.find(item => item.id === id);
-          if (existingItem) {
-            return {
-              items: state.items.map(item =>
-                item.id === id
-                  ? { ...item, quantity: item.quantity + quantity }
-                  : item
-              ),
-            };
-          }
-          return {
-            items: [...state.items, {
-              id,
-              name: product.name,
-              description: product.description,
-              price: product.price,
-              stock: product.stock,
-              categoryId: product.categoryId,
-              quantity
-            }]
-          };
-        });
-      }
-    } catch (error) {
-      console.error('Failed to add item to cart:', error);
-      throw error;
+
+  addToCart: async (id, quantity) => {
+    requireSession();
+    const productResponse = await api.get<Product>(`/products/${id}`);
+    const product = {
+      ...productResponse.data,
+      price: Number(productResponse.data.price),
+    };
+
+    if (product.stock < quantity) {
+      throw new Error("Not enough stock available");
     }
+
+    await api.post("/cart/add", { productId: id, quantity });
+    set((state) => {
+      const existingItem = state.items.find((item) => item.id === id);
+      if (existingItem) {
+        return {
+          items: state.items.map((item) =>
+            item.id === id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item,
+          ),
+        };
+      }
+
+      return {
+        items: [
+          ...state.items,
+          {
+            id,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            stock: product.stock,
+            categoryId: product.categoryId,
+            quantity,
+          },
+        ],
+      };
+    });
   },
 
   updateQuantity: async (id, quantity) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token || !validateToken(token)) {
-        handleAuthError();
-        return;
-      }
-      
-      const response = await api.put(`/cart/${id}`, 
-        { quantity },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (response.status === 200) {
-        set((state) => ({
-          items: state.items.map(item =>
-            item.id === id ? { ...item, quantity } : item
-          ),
-        }));
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 401) {
-        handleAuthError();
-      } else {
-        console.error('Failed to update cart item quantity:', error);
-      }
-    }
+    requireSession();
+    await api.put(`/cart/${id}`, { quantity });
+    set((state) => ({
+      items: state.items.map((item) =>
+        item.id === id ? { ...item, quantity } : item,
+      ),
+    }));
   },
 
   removeFromCart: async (id) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token || !validateToken(token)) {
-        handleAuthError();
-        return;
-      }
-
-      const response = await api.delete(`/cart/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        }
-      });
-
-      if (response.status === 200) {
-        set((state) => ({
-          items: state.items.filter(item => item.id !== id),
-        }));
-      }
-    } catch (error) {
-      const axiosError = error as AxiosError;
-      if (axiosError.response?.status === 401) {
-        handleAuthError();
-      } else {
-        console.error('Failed to remove cart item:', error);
-      }
-    }
+    requireSession();
+    await api.delete(`/cart/${id}`);
+    set((state) => ({
+      items: state.items.filter((item) => item.id !== id),
+    }));
   },
 
-  clearCart: () => {
-    set({ items: [] });
-  },
-
-  getTotalItems: () => {
-    return get().items.reduce((total, item) => total + item.quantity, 0);
-  },
-
-  getTotalPrice: () => {
-    return get().items.reduce((total, item) => total + item.quantity * +item.price, 0);
-  },
+  clearCart: () => set({ items: [], error: null }),
+  getTotalItems: () =>
+    get().items.reduce((total, item) => total + item.quantity, 0),
+  getTotalPrice: () =>
+    get().items.reduce(
+      (total, item) => total + item.quantity * Number(item.price),
+      0,
+    ),
 }));

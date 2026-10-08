@@ -1,12 +1,9 @@
-import React from 'react';
-import Checkout from '@/components/checkout/Checkout';
+import Checkout from "@/components/checkout/Checkout";
 
-const CheckoutPage = () => {
+export default function CheckoutPage() {
   return (
-    <div>
+    <main className="min-h-screen bg-slate-50 px-4 pb-16 pt-24 sm:px-6">
       <Checkout />
-    </div>
+    </main>
   );
-};
-
-export default CheckoutPage;
+}

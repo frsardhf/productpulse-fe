@@ -1,90 +1,92 @@
-'use client';
-import React, { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Loader2 } from "lucide-react";
-import api from '@/lib/axios';
-import OrderList from '@/components/order/OrderList';
-import { Card, CardContent } from "@/components/ui/card";
-import { Order } from '@/types/order';
+"use client";
 
-const OrdersPage = () => {
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { AlertCircle, Loader2, PackageCheck } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import api from "@/lib/axios";
+import { useAuth } from "@/contexts/auth-context";
+import OrderList from "@/components/order/OrderList";
+import { Button } from "@/components/ui/button";
+import { Order } from "@/types/order";
+
+function OrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-
-  const getAuthToken = () => {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    return token;
-  };
-
-  const getAuthUserString = () => {
-    const userString = localStorage.getItem('user');
-    if (!userString) return null;
-    return JSON.parse(userString);
-  };
+  const searchParams = useSearchParams();
+  const highlightedOrderId = Number(searchParams.get("created")) || undefined;
 
   const fetchOrders = useCallback(async () => {
-    const token = getAuthToken();
-    if (!token) {
-      setError('Authentication required');
-      router.push('/login?returnUrl=' + encodeURIComponent(window.location.pathname));
-      return;
-    }
-
-    const user = getAuthUserString();
-
+    setIsLoading(true);
+    setError(null);
     try {
-      const response = await api.get(`/orders/${user.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-        },
-      });
-
-      if (response.status === 200) {
-        setOrders(response.data);
-      }
-    } catch (error) {
-      setError('Failed to fetch orders');
-      console.error('Error fetching orders:', error);
+      const response = await api.get<Order[]>("/orders/history");
+      setOrders(response.data);
+    } catch {
+      setError("Your order history could not be loaded.");
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, []);
 
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    if (authLoading) return;
+    if (!user) {
+      router.replace("/login?returnUrl=%2Forder");
+      return;
+    }
+    void fetchOrders();
+  }, [authLoading, fetchOrders, router, user]);
 
-  if (isLoading) {
+  if (authLoading || isLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex min-h-[420px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="sr-only">Loading order history</span>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <Card className="mx-auto max-w-4xl mt-4">
-        <CardContent className="p-6">
-          <div className="text-destructive">Error: {error}</div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
-    <div className="h-[calc(100vh-5px)] p-4 pt-[72px]">
-      <Card className="max-w-4xl mx-auto h-full">
-        <CardContent className="p-6 h-full pt-[20px]">
-          <OrderList orders={orders} />
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+    <main className="min-h-screen bg-slate-50 px-4 pb-16 pt-24 sm:px-6">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+            <PackageCheck className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-primary">Your account</p>
+            <h1 className="text-3xl font-bold tracking-tight">Order history</h1>
+          </div>
+        </div>
 
-export default OrdersPage;
+        <p className="mb-6 max-w-2xl text-sm leading-6 text-muted-foreground">
+          These are simulated ProductPulse orders. No payment was collected and
+          no order was submitted to the catalogue source.
+        </p>
+
+        {error ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-12 text-center">
+            <AlertCircle className="mx-auto h-8 w-8 text-red-600" />
+            <p className="mt-4 font-medium text-red-950">{error}</p>
+            <Button className="mt-5" variant="outline" onClick={fetchOrders}>
+              Try again
+            </Button>
+          </div>
+        ) : (
+          <OrderList orders={orders} highlightedOrderId={highlightedOrderId} />
+        )}
+      </div>
+    </main>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+      <OrdersContent />
+    </Suspense>
+  );
+}

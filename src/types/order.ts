@@ -1,7 +1,8 @@
-interface OrderItem {
+export interface OrderItem {
   id: number;
   orderId: number;
   productId: number;
+  productName: string;
   quantity: number;
   price: string;
 }
@@ -10,9 +11,9 @@ export interface Order {
   id: number;
   userId: number;
   productsId: number[];
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Cancelled';
+  status: string;
   totalPrice: string;
-  shippingAddress: string;
+  shippingAddress: string | null;
   createdAt: string;
   orderItems: OrderItem[];
 }

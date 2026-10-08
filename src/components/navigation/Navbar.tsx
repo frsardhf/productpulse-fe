@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import api from '@/lib/axios';
-import { jwtDecode } from 'jwt-decode';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { User } from '@/types/auth';
+import { clearStoredSession, isProtectedPath, isSessionTokenValid } from '@/lib/session';
 
 interface NavItem {
   label: string;
@@ -14,12 +14,6 @@ interface NavItem {
   requiresAuth?: boolean;
   requiresAdmin?: boolean;
 }
-
-interface JWTPayload {
-  exp: number;
-}
-
-const protectedPaths = ['/admin', '/cart', '/checkout', '/order', '/profile'];
 
 const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -52,16 +46,6 @@ const Navbar: React.FC = () => {
     return true;
   };
 
-  const isTokenExpired = (token: string): boolean => {
-    try {
-      const decoded = jwtDecode<JWTPayload>(token);
-      const currentTime = Math.floor(Date.now() / 1000);
-      return decoded.exp < currentTime;
-    } catch {
-      return true;
-    }
-  };
-
   const handleLogout = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
@@ -73,8 +57,7 @@ const Navbar: React.FC = () => {
         }
       }
     } finally {
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      clearStoredSession();
       setUser(null);
       setIsOpen(false);
       setIsProfileDropdownOpen(false);
@@ -95,11 +78,10 @@ const Navbar: React.FC = () => {
       return;
     }
 
-    if (isTokenExpired(token)) {
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+    if (!isSessionTokenValid(token)) {
+      clearStoredSession();
       setUser(null);
-      if (protectedPaths.some((path) => pathname.startsWith(path))) {
+      if (isProtectedPath(pathname)) {
         router.replace(`/login?returnUrl=${encodeURIComponent(pathname)}`);
       }
     }
@@ -155,6 +137,7 @@ const Navbar: React.FC = () => {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={pathname === item.href ? 'page' : undefined}
                   className={`${
                     pathname === item.href
                       ? 'px-3 text-primary font-bold'
@@ -186,6 +169,10 @@ const Navbar: React.FC = () => {
               ) : (
                 <div className="relative">
                   <button
+                    type="button"
+                    aria-expanded={isProfileDropdownOpen}
+                    aria-controls="profile-menu"
+                    aria-haspopup="true"
                     onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                     className="flex items-center space-x-2 text-gray-600 hover:text-purple-600 focus:outline-none"
                   >
@@ -194,7 +181,10 @@ const Navbar: React.FC = () => {
                   </button>
                   
                   {isProfileDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
+                    <div
+                      id="profile-menu"
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5"
+                    >
                       <Link
                         href="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-purple-50"
@@ -215,7 +205,11 @@ const Navbar: React.FC = () => {
           </div>
 
           <button
+            type="button"
             id="hamburger-button"
+            aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isOpen}
+            aria-controls="mobile-menu"
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden p-2 rounded-md text-gray-600 hover:text-purple-600 hover:bg-purple-50"
           >
@@ -238,6 +232,7 @@ const Navbar: React.FC = () => {
                   <Link
                     key={item.href}
                     href={item.href}
+                    aria-current={pathname === item.href ? 'page' : undefined}
                     className={`${
                       pathname === item.href
                         ? 'block px-3 py-2 rounded-md text-base font-bold text-primary'

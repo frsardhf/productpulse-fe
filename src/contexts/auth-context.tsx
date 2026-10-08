@@ -1,6 +1,20 @@
-'use client';
-import React, { createContext, useContext, useState, useEffect, useMemo, Dispatch, SetStateAction } from 'react';
-import { User } from '@/types/auth';
+"use client";
+
+import {
+  createContext,
+  Dispatch,
+  SetStateAction,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { User } from "@/types/auth";
+import {
+  AUTH_EXPIRED_EVENT,
+  clearStoredSession,
+  isSessionTokenValid,
+} from "@/lib/session";
 
 export interface AuthContextType {
   user: User | null;
@@ -9,75 +23,75 @@ export interface AuthContextType {
   isAdmin: boolean;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+function readStoredUser(): User | null {
+  const token = localStorage.getItem("token");
+  const value = localStorage.getItem("user");
+  if (!isSessionTokenValid(token) || !value) {
+    clearStoredSession();
+    return null;
+  }
+
+  try {
+    const user = JSON.parse(value) as Partial<User>;
+    if (
+      typeof user.id === "number" &&
+      typeof user.name === "string" &&
+      typeof user.email === "string" &&
+      typeof user.role === "string"
+    ) {
+      return user as User;
+    }
+  } catch {
+    // Invalid local state is handled by clearing the session below.
+  }
+
+  clearStoredSession();
+  return null;
+}
+
+export function AuthProvider({
+  children,
+}: {
+  readonly children: React.ReactNode;
+}) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const isAdmin = user?.role === 'ADMIN';
-
   useEffect(() => {
     const loadUser = () => {
-      try {
-        if (typeof window !== 'undefined') {
-          const userString = localStorage.getItem('user');
-          const userData: User | null = userString ? JSON.parse(userString) : null;
-          
-          if (
-            userData &&
-            typeof userData.id === 'number' &&
-            typeof userData.name === 'string' &&
-            typeof userData.email === 'string' &&
-            typeof userData.role === 'string'
-          ) {
-            setUser(userData);
-          } else {
-            localStorage.removeItem('user');
-            setUser(null);
-          }
-        }
-      } catch (error) {
-        console.error('Error loading user:', error);
-        localStorage.removeItem('user');
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+      setUser(readStoredUser());
+      setLoading(false);
     };
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === "user" || event.key === "token") loadUser();
+    };
+
+    const handleExpiredSession = () => setUser(null);
 
     loadUser();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'user') {
-        loadUser();
-      }
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpiredSession);
     };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
   }, []);
 
-  const value = useMemo(() => ({
-    user,
-    setUser ,
-    loading,
-    isAdmin
-  }), [user, loading, isAdmin]);
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, setUser, loading, isAdmin: user?.role === "ADMIN" }),
+    [loading, user],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 }

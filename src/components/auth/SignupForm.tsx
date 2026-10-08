@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -30,7 +29,6 @@ interface SignupFormProps {
 export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { setUser } = useAuth();
 
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -46,15 +44,7 @@ export default function SignupForm({ onSignupSuccess }: SignupFormProps) {
     setError('');
 
     try {
-      const requestData = { ...data, role: 'USER' };
-      const response = await api.post('/users/signup', requestData);
-      const { token, user } = response.data;
-
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      setUser(user);
-      
+      await api.post('/users/signup', data);
       onSignupSuccess();
     } catch (error) {
       if ((error as AxiosError).response?.status === 409) {

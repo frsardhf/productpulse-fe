@@ -1,4 +1,9 @@
 import axios from "axios";
+import {
+  AUTH_EXPIRED_EVENT,
+  clearStoredSession,
+  loginUrlForCurrentPage,
+} from "@/lib/session";
 
 const api = axios.create({
   baseURL:
@@ -19,5 +24,24 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (
+      typeof window !== "undefined" &&
+      error.response?.status === 401 &&
+      !String(error.config?.url ?? "").includes("/auth/login")
+    ) {
+      clearStoredSession();
+      window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+      if (window.location.pathname !== "/login") {
+        window.location.assign(loginUrlForCurrentPage());
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export default api;
