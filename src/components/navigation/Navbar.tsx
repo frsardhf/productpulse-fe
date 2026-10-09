@@ -127,7 +127,7 @@ const Navbar: React.FC = () => {
             href="/" 
             className="text-lg font-semibold text-purple-400 hover:text-purple-700"
           >
-            ProductPulse
+            Relicase
           </Link>
 
           <div className="hidden md:flex items-center justify-between flex-1 pl-8">

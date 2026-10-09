@@ -95,7 +95,7 @@ export default function ProductDetails() {
             {product.name}
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            {product.sourceVendor || "ProductPulse catalogue"}
+            {product.sourceVendor || "Relicase catalogue"}
           </p>
 
           <div className="mt-7 flex flex-wrap items-end justify-between gap-4 border-y py-5">
@@ -114,7 +114,7 @@ export default function ProductDetails() {
                 {stockLabel(product.stock)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                ProductPulse simulated inventory
+                Relicase simulated inventory
               </p>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default function ProductDetails() {
           <div className="mt-6 flex gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-xs leading-5 text-indigo-950">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
             Portfolio demo: orders are simulated and no payment is collected.
-            ProductPulse is not an official Good Smile store.
+            Relicase is not an official Good Smile store.
           </div>
 
           <div className="mt-auto grid grid-cols-3 gap-3 pt-8 text-center text-[0.7rem] text-muted-foreground">

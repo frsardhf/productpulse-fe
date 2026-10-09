@@ -16,7 +16,7 @@ function LoginContent() {
       <div className="mx-auto w-full max-w-md">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight text-slate-950">
-            Sign in to ProductPulse
+            Sign in to Relicase
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             New to the demo?{" "}

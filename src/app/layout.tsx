@@ -17,8 +17,8 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "ProductPulse",
-    template: "%s | ProductPulse",
+    default: "Relicase",
+    template: "%s | Relicase",
   },
   description:
     "A full-stack portfolio storefront with a curated merchandise catalogue and simulated checkout.",

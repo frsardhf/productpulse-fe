@@ -37,7 +37,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {productCategory(product)}
           </Badge>
           <span className="text-xs font-medium text-muted-foreground">
-            {product.sourceVendor || "ProductPulse"}
+            {product.sourceVendor || "Relicase"}
           </span>
         </div>
         <CardTitle className="min-h-12 text-base leading-6">

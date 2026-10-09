@@ -41,7 +41,7 @@ export default function ProductArtwork({
       <div className="relative z-10 flex w-full items-end justify-between gap-4">
         <div>
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.28em] opacity-70">
-            ProductPulse catalogue
+            Relicase catalogue
           </p>
           <p
             className={cn(

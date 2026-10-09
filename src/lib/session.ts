@@ -4,7 +4,7 @@ interface JwtPayload {
   exp?: number;
 }
 
-export const AUTH_EXPIRED_EVENT = "productpulse:auth-expired";
+export const AUTH_EXPIRED_EVENT = "relicase:auth-expired";
 
 export const protectedPaths = [
   "/admin",

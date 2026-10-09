@@ -204,7 +204,7 @@ export default function ProductList() {
           </Button>
         </div>
         <p className="mt-4 border-t pt-4 text-xs leading-5 text-muted-foreground">
-          Catalogue metadata is sourced from Good Smile US. ProductPulse stock
+          Catalogue metadata is sourced from Good Smile US. Relicase stock
           and orders are portfolio simulations.
         </p>
       </div>

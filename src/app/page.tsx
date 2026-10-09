@@ -35,7 +35,7 @@ export default function HomePage() {
             </div>
             <p className="mt-5 text-xs leading-5 text-muted-foreground">
               Portfolio demo: orders are simulated and no payment is collected.
-              ProductPulse is not an official Good Smile store.
+              Relicase is not an official Good Smile store.
             </p>
           </div>
 

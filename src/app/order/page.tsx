@@ -63,7 +63,7 @@ function OrdersContent() {
         </div>
 
         <p className="mb-6 max-w-2xl text-sm leading-6 text-muted-foreground">
-          These are simulated ProductPulse orders. No payment was collected and
+          These are simulated Relicase orders. No payment was collected and
           no order was submitted to the catalogue source.
         </p>
 
