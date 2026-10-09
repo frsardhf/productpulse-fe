@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Relicase frontend
+
+Relicase is a portfolio e-commerce storefront built with Next.js 14, React, TypeScript, Tailwind CSS, and shadcn/ui. The production build is a static export hosted on Cloudflare Pages and backed by the separate [Relicase API](https://github.com/frsardhf/relicase-api).
+
+- Live site: [relicase.pages.dev](https://relicase.pages.dev)
+- API documentation: [api.relicase.eriduops.com/api](https://api.relicase.eriduops.com/api)
+
+The catalogue uses a bounded Good Smile US metadata snapshot. Inventory, carts, checkout, and orders are local portfolio simulations. No payment is collected, and this is not an official Good Smile store.
 
 ## Getting Started
 
-First, run the development server:
+Requirements:
+
+- Node.js 20
+- npm
+- A running Relicase API, locally or remotely
+
+Install dependencies and create the local environment file:
+
+```bash
+npm ci
+cp .env.example .env.local
+```
+
+Set the API origin in `.env.local`:
+
+```dotenv
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
+```
+
+This is public browser configuration embedded into the static JavaScript bundle at build time. Do not put database credentials, JWT secrets, or other private values in a `NEXT_PUBLIC_*` variable.
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Available flows
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Browse, search, filter, sort, and paginate the catalogue without signing in
+- View source-aware product details and simulated stock states
+- Sign up, sign in, update a profile, and recover cleanly from expired sessions
+- Add, update, and remove cart items
+- Submit a simulated checkout and view order history
+- Manage products, order statuses, and user roles through protected admin views
+- Use the responsive interface by keyboard across mobile and desktop layouts
+
+### Verification
+
+Run the same frontend checks used by CI:
+
+```bash
+npm run check
+```
+
+This runs linting, TypeScript checking, the production build, and static-export verification. To inspect the generated `out/` directory locally:
+
+```bash
+npm run preview:static
+```
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+Important project files:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `src/lib/axios.ts` validates the build-time API URL and handles expired authenticated sessions.
+- `src/lib/catalogue.ts` normalizes source metadata for catalogue filtering and search.
+- `src/contexts/auth-context.tsx` and `src/hooks/use-cart.ts` coordinate client-side session and cart state.
+- `scripts/verify-static-export.mjs` checks required routes and Pages assets after a build.
+- `public/_headers` defines security headers for Cloudflare Pages.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The backend repository contains the REST contract, Prisma schema, catalogue fixture, migrations, and transactional checkout implementation.
 
-## Deploy on Vercel
+## Deploy on Cloudflare Pages
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The repository is configured for Next.js static export with trailing-slash routes. Use these Pages settings:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Setting | Value |
+| --- | --- |
+| Framework preset | Next.js (Static HTML Export) |
+| Build command | `npx next build` |
+| Build output directory | `out` |
+| Environment variable | `NEXT_PUBLIC_API_BASE_URL=https://api.relicase.eriduops.com` |
+
+Production deploys from `refresh/cloudflare-pages` while the refresh work is reviewed. Pull requests and refresh branches are also verified by GitHub Actions.
+
+Because this is a static export, adding a new fixed route requires a new build and deployment. Runtime-only Next.js features such as Server Actions and request-time server rendering are intentionally not used.
