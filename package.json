@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
-    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "verify:export": "node scripts/verify-static-export.mjs",
+    "check": "npm run lint && npm run typecheck && npm run build && npm run verify:export",
+    "preview:static": "node scripts/serve-static.mjs",
+    "start": "node scripts/serve-static.mjs",
     "lint": "next lint"
   },
   "dependencies": {

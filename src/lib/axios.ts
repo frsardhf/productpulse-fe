@@ -5,9 +5,30 @@ import {
   loginUrlForCurrentPage,
 } from "@/lib/session";
 
+function apiBaseUrl(): string {
+  const configuredUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    "https://productpulse-be.vercel.app";
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(configuredUrl);
+  } catch {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL must be a valid URL");
+  }
+
+  if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL must use HTTP or HTTPS");
+  }
+  if (parsedUrl.username || parsedUrl.password) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL must not contain credentials");
+  }
+
+  return parsedUrl.toString().replace(/\/$/, "");
+}
+
 const api = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_API_URL ?? "https://productpulse-be.vercel.app",
+  baseURL: apiBaseUrl(),
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
