@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      NEXT_PUBLIC_API_BASE_URL: https://productpulse-be.vercel.app
+      NEXT_PUBLIC_API_BASE_URL: https://api.relicase.eriduops.com
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
