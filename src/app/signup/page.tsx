@@ -36,7 +36,7 @@ function SignupContent() {
 
         <p className="mt-5 text-center text-xs leading-5 text-muted-foreground">
           Registration creates a local Relicase user. It does not create a
-          Good Smile account or enable real purchases.
+          museum account or enable real purchases.
         </p>
       </div>
     </main>

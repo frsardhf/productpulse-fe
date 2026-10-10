@@ -5,7 +5,7 @@ Relicase is a portfolio e-commerce storefront built with Next.js 14, React, Type
 - Live site: [relicase.pages.dev](https://relicase.pages.dev)
 - API documentation: [api.relicase.eriduops.com/api](https://api.relicase.eriduops.com/api)
 
-The catalogue uses a bounded Good Smile US metadata snapshot. Inventory, carts, checkout, and orders are local portfolio simulations. No payment is collected, and this is not an official Good Smile store.
+The catalogue uses a bounded snapshot of public-domain East Asian artwork from The Metropolitan Museum of Art Open Access collection. Artwork images are provided under CC0. Print prices, inventory, carts, checkout, and orders are portfolio simulations, and no payment is collected.
 
 ## Getting Started
 
@@ -41,6 +41,8 @@ Open [http://localhost:3001](http://localhost:3001).
 ### Available flows
 
 - Browse, search, filter, sort, and paginate the catalogue without signing in
+- View permitted Open Access artwork images and source attribution
+- Use a fixed-sequence homepage slideshow with reduced-motion support
 - View source-aware product details and simulated stock states
 - Sign up, sign in, update a profile, and recover cleanly from expired sessions
 - Add, update, and remove cart items

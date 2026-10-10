@@ -17,6 +17,9 @@ export interface Product {
   imageUrl?: string | null;
   imageAlt?: string | null;
   imageRightsStatus?: "UNVERIFIED" | "PERMITTED" | "PLACEHOLDER_ONLY";
+  sourceLicense?: string | null;
+  sourceAttribution?: string | null;
+  catalogueActive?: boolean;
 }
 
 export interface UpdatedProduct {

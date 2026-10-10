@@ -55,13 +55,6 @@ export default function ProductDetails() {
   }
 
   const detailsUrl = `/products/details?id=${product.id}`;
-  const sourceAvailability =
-    product.sourceAvailable === true
-      ? "Listed as available when imported"
-      : product.sourceAvailable === false
-        ? "Listed as unavailable when imported"
-        : "Source availability not recorded";
-
   return (
     <article className="mx-auto max-w-6xl">
       <Link
@@ -134,15 +127,25 @@ export default function ProductDetails() {
               <dd className="mt-1 font-medium">#{product.id}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Source variant</dt>
+              <dt className="text-muted-foreground">Met object ID</dt>
               <dd className="mt-1 font-medium">
                 {product.sourceVariantId || "Not provided"}
               </dd>
             </div>
             <div className="sm:col-span-2">
-              <dt className="text-muted-foreground">Source status</dt>
-              <dd className="mt-1 font-medium">{sourceAvailability}</dd>
+              <dt className="text-muted-foreground">Image license</dt>
+              <dd className="mt-1 font-medium">
+                {product.sourceLicense || "Not recorded"}
+              </dd>
             </div>
+            {product.sourceAttribution && (
+              <div className="sm:col-span-2">
+                <dt className="text-muted-foreground">Attribution</dt>
+                <dd className="mt-1 font-medium">
+                  {product.sourceAttribution}
+                </dd>
+              </div>
+            )}
           </dl>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -155,7 +158,7 @@ export default function ProductDetails() {
             {product.sourceUrl && (
               <Button asChild variant="outline" size="lg">
                 <a href={product.sourceUrl} target="_blank" rel="noreferrer">
-                  Source <ExternalLink />
+                  View at The Met <ExternalLink />
                 </a>
               </Button>
             )}
@@ -163,13 +166,13 @@ export default function ProductDetails() {
 
           <div className="mt-6 flex gap-3 rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 text-xs leading-5 text-indigo-950">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
-            Portfolio demo: orders are simulated and no payment is collected.
-            Relicase is not an official Good Smile store.
+            Portfolio demo: Relicase sells no real prints and is not affiliated
+            with The Met. Prices, inventory, orders, and checkout are simulated.
           </div>
 
           <div className="mt-auto grid grid-cols-3 gap-3 pt-8 text-center text-[0.7rem] text-muted-foreground">
             <div className="rounded-xl border p-3">
-              <Store className="mx-auto mb-2 h-4 w-4" /> Source attributed
+              <Store className="mx-auto mb-2 h-4 w-4" /> CC0 artwork
             </div>
             <div className="rounded-xl border p-3">
               <PackageCheck className="mx-auto mb-2 h-4 w-4" /> Local stock

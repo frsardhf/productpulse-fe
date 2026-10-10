@@ -204,8 +204,9 @@ export default function ProductList() {
           </Button>
         </div>
         <p className="mt-4 border-t pt-4 text-xs leading-5 text-muted-foreground">
-          Catalogue metadata is sourced from Good Smile US. Relicase stock
-          and orders are portfolio simulations.
+          Artwork metadata and public-domain images are from The Metropolitan
+          Museum of Art Open Access collection. Prices, stock, and orders are
+          portfolio simulations.
         </p>
       </div>
 
@@ -235,7 +236,7 @@ export default function ProductList() {
         <div className="mt-4 rounded-3xl border border-dashed bg-white px-6 py-20 text-center">
           <Search className="mx-auto h-8 w-8 text-muted-foreground" />
           <h2 className="mt-4 text-xl font-semibold">
-            No matching merchandise
+            No matching artwork
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Try a broader search or reset the catalogue filters.

@@ -136,7 +136,7 @@ export default function Checkout() {
         <AlertTitle>Simulated checkout</AlertTitle>
         <AlertDescription>
           Use fictitious address details. No payment is collected and this order
-          is not sent to Good Smile US.
+          is not sent to The Metropolitan Museum of Art.
         </AlertDescription>
       </Alert>
 
